@@ -1,0 +1,36 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  claude-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            このプルリクエストのコードを以下の観点でレビューしてください。
+
+            1. **セキュリティ脆弱性**: インジェクション、機密情報の露出、安全でない処理
+            2. **型安全性**: 型アノテーションの欠落・不整合、None の見落とし
+            3. **エラーハンドリング**: 例外の握りつぶし、不十分なエラーメッセージ、リソースリーク
+
+            問題が見つかった場合は、問題コードと改善案・修正例をセットで提示してください。
+            深刻度は 🔴 Critical / 🟠 High / 🟡 Medium / 🔵 Low で示してください。
+            問題がない場合は「問題なし」と明記してください。
